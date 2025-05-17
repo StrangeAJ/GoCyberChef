@@ -1,0 +1,265 @@
+<!-- filepath: c:\\Users\\Ashish Jingar\\Personal\\Repos\\go-wasm-project\\index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Go-CyberChef (WASM Edition)</title>
+    <script src="wasm_exec.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f0f0f0; display: flex; flex-direction: column; height: 100vh; color: #333; }
+        .header { background-color: #252526; color: white; padding: 10px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;}
+        .header h1 { margin: 0; font-size: 1.6em; font-weight: normal; }
+        .status-bar { padding: 8px 20px; background-color: #007acc; color: white; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center; }
+        .status-bar #wasmStatus { margin-right: 20px; }
+        .status-bar #errorDisplay { color: #ffdddd; font-weight: bold; text-align: right; flex-grow: 1;}
+        .main-container { display: flex; flex-grow: 1; padding: 15px; gap: 15px; overflow: hidden; background-color: #1e1e1e; }
+        .column { display: flex; flex-direction: column; background-color: #2d2d2d; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); overflow: hidden; color: #ccc; }
+        
+        .operations-list { width: 220px; padding: 15px; }
+        .operations-list h3 { margin-top: 0; font-size: 1.2em; color: #0098ff; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 12px;}
+        .operations-list button { display: block; width: 100%; padding: 10px; margin-bottom: 10px; background-color: #3c3c3c; color: #ddd; border: 1px solid #555; border-radius: 4px; cursor: pointer; text-align: left; font-size:0.95em; }
+        .operations-list button:hover { background-color: #007acc; color:white; border-color: #007acc;}
+        
+        .recipe-column { flex: 1.2; padding: 15px; display: flex; flex-direction: column; }
+        .recipe-column h3 { margin-top: 0; font-size: 1.2em; color: #0098ff; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 12px;}
+        #recipeContainer { border: 1px solid #444; min-height: 150px; padding: 10px; border-radius: 4px; background-color: #252526; flex-grow: 1; margin-bottom:15px; overflow-y: auto; }
+        .recipe-item { background-color: #37373d; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #555;}
+        .recipe-item span { flex-grow: 1; }
+        .recipe-item button.remove-op-btn { background-color: #c0392b; color:white; border:none; padding: 4px 8px; cursor:pointer; border-radius:3px; font-size:0.8em; margin-left: 10px;}
+        .recipe-item button.remove-op-btn:hover { background-color: #e74c3c; }
+        #bakeButton { padding: 12px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1.1em; width:100%; }
+        #bakeButton:hover { background-color: #218838; }
+        #bakeButton:disabled { background-color: #555; cursor: not-allowed;}
+        
+        .io-column { flex: 3; display: flex; flex-direction: column; }
+        .io-column h3 { margin-top: 0; padding:15px; padding-bottom:5px; font-size: 1.2em; color: #0098ff; border-bottom: 1px solid #444; margin-left:15px; margin-right:15px; margin-bottom:0px;}
+        textarea { width: calc(100% - 30px); flex-grow: 1; border: 1px solid #444; border-radius: 4px; padding: 12px; font-family: 'Consolas', 'Courier New', monospace; font-size: 1em; resize: none; margin: 15px; margin-top:10px; background-color: #1e1e1e; color: #d4d4d4; }
+        #processingTime { font-size: 0.9em; margin-top: 10px; text-align: right; padding-right:0px; color: #888;}
+    </style>
+    <script>
+        let go; // Go WASM instance
+        let recipe = [];
+        let wasmReady = false;
+        let wasmFunctions = {}; // To store detected WASM functions
+
+        async function initWasm() {
+            const statusEl = document.getElementById('wasmStatus');
+            const errorEl = document.getElementById('errorDisplay');
+            const bakeBtn = document.getElementById('bakeButton');
+            
+            if (!statusEl || !errorEl || !bakeBtn) {
+                console.error("DOM elements for status/error display or bake button not found during initWasm. Retrying after DOMContentLoaded.");
+                // This case should ideally not happen if initWasm is called correctly after DOM load.
+                return;
+            }
+            bakeBtn.disabled = true;
+            statusEl.textContent = 'Loading WASM...';
+            errorEl.textContent = '';
+            go = new Go();
+            try {
+                const result = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject);
+                // Create a new Promise to handle the go.run execution
+                // This is because go.run might block or exit, and we want to ensure our JS continues
+                const runPromise = new Promise((resolve, reject) => {
+                    go.run(result.instance);
+                    // If go.run() exits (e.g. Go program finishes), it might not resolve/reject.
+                    // We assume it's ready if it doesn't throw an immediate error.
+                    // For more robust handling, Go might need to signal JS when it's fully initialized.
+                    resolve();
+                });
+                await runPromise;
+
+                wasmReady = true;
+                statusEl.textContent = 'WASM Ready.';
+                console.log("WASM Instance Initialized. Checking for exported functions...");
+
+                // Check for exposed Go functions
+                if (typeof globalThis.goEncodeBase64 === 'function') {
+                    wasmFunctions.goEncodeBase64 = globalThis.goEncodeBase64;
+                    console.log('goEncodeBase64 function is available.');
+                } else {
+                    console.warn('goEncodeBase64 function not found on globalThis.');
+                    errorEl.textContent += ' Warning: goEncodeBase64 not found.';
+                }
+                if (typeof globalThis.goDecodeBase64 === 'function') {
+                    wasmFunctions.goDecodeBase64 = globalThis.goDecodeBase64;
+                    console.log('goDecodeBase64 function is available.');
+                } else {
+                    console.warn('goDecodeBase64 function not found on globalThis.');
+                    errorEl.textContent += ' Warning: goDecodeBase64 not found.';
+                }
+                
+                if (Object.keys(wasmFunctions).length > 0) {
+                     bakeBtn.disabled = false;
+                } else {
+                    errorEl.textContent = 'Critical Error: No WASM functions loaded. Baking disabled.';
+                }
+
+            } catch (err) {
+                console.error("Error loading or running WASM:", err);
+                statusEl.textContent = 'WASM Load Error.';
+                errorEl.textContent = "Error loading WASM: " + (err.message || err);
+                wasmReady = false;
+                bakeBtn.disabled = true;
+            }
+        }
+
+        function addOperationToRecipe(opName, opFuncKey) {
+            const errorEl = document.getElementById('errorDisplay');
+            errorEl.textContent = ''; // Clear previous errors
+
+            if (!wasmReady) {
+                errorEl.textContent = "WASM not ready. Cannot add operation.";
+                console.warn("Attempted to add operation while WASM not ready.");
+                return;
+            }
+            if (!wasmFunctions[opFuncKey]) {
+                errorEl.textContent = `Error: WASM function ${opFuncKey} is not available.`;
+                console.error(`WASM function ${opFuncKey} is not available.`);
+                return;
+            }
+
+            recipe.push({ name: opName, funcKey: opFuncKey });
+            renderRecipe();
+        }
+
+        function removeOperationFromRecipe(index) {
+            recipe.splice(index, 1);
+            renderRecipe();
+        }
+
+        function renderRecipe() {
+            const recipeContainer = document.getElementById('recipeContainer');
+            if (!recipeContainer) return;
+            recipeContainer.innerHTML = ''; // Clear current recipe
+            recipe.forEach((op, index) => {
+                const item = document.createElement('div');
+                item.classList.add('recipe-item');
+                
+                const opNameSpan = document.createElement('span');
+                opNameSpan.textContent = `${index + 1}. ${op.name}`;
+                item.appendChild(opNameSpan);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.classList.add('remove-op-btn');
+                removeBtn.textContent = 'Remove';
+                removeBtn.onclick = (event) => {
+                    event.stopPropagation(); // Prevent triggering other clicks if any
+                    removeOperationFromRecipe(index);
+                };
+                item.appendChild(removeBtn);
+                recipeContainer.appendChild(item);
+            });
+        }
+
+        async function bake() {
+            const inputTextArea = document.getElementById('inputTextArea');
+            const outputTextArea = document.getElementById('outputTextArea');
+            const processingTimeEl = document.getElementById('processingTime');
+            const errorEl = document.getElementById('errorDisplay');
+            const bakeBtn = document.getElementById('bakeButton');
+
+            if (!inputTextArea || !outputTextArea || !processingTimeEl || !errorEl || !bakeBtn) {
+                console.error("Missing critical UI elements for bake operation.");
+                if(errorEl) errorEl.textContent = "UI Error: Page elements missing.";
+                return;
+            }
+            
+            errorEl.textContent = ''; // Clear previous errors
+            if (!wasmReady) {
+                errorEl.textContent = "WASM not ready. Cannot bake.";
+                return;
+            }
+            if (recipe.length === 0) {
+                errorEl.textContent = "Recipe is empty. Add operations first.";
+                return;
+            }
+            if (Object.keys(wasmFunctions).length === 0) {
+                errorEl.textContent = "No WASM functions available for baking.";
+                return;
+            }
+
+            outputTextArea.value = 'Processing...';
+            bakeBtn.disabled = true;
+            let currentData = inputTextArea.value;
+            
+            const startTime = performance.now();
+
+            try {
+                for (const op of recipe) {
+                    const wasmFunc = wasmFunctions[op.funcKey];
+                    if (typeof wasmFunc !== 'function') {
+                        throw new Error(`WASM Operation '${op.name}' (${op.funcKey}) is not available or not a function.`);
+                    }
+                    console.log(`Applying: ${op.name}, Input length: ${currentData.length}`);
+                    currentData = wasmFunc(currentData);
+                    // Check for errors returned as strings from Go functions
+                    if (typeof currentData === 'string' && currentData.toLowerCase().startsWith("error:")) {
+                        console.error(`Error from WASM function ${op.name}: ${currentData}`);
+                        throw new Error(currentData);
+                    }
+                }
+                outputTextArea.value = currentData;
+            } catch (e) {
+                console.error("Error during bake process:", e);
+                outputTextArea.value = "Error: " + (e.message || e);
+                errorEl.textContent = "Processing Error: " + (e.message || e);
+            } finally {
+                const endTime = performance.now();
+                processingTimeEl.textContent = `Processing time: ${(endTime - startTime).toFixed(2)} ms`;
+                bakeBtn.disabled = false;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ensure initWasm is called after the DOM is ready.
+            initWasm().catch(err => {
+                // This catch is for errors during the initWasm() call itself, not within the async function.
+                console.error("WASM Initialization Critical Failure (DOMContentLoaded):", err);
+                const statusEl = document.getElementById('wasmStatus');
+                const errorEl = document.getElementById('errorDisplay');
+                if (statusEl) statusEl.textContent = 'WASM Init Failed!';
+                if (errorEl) errorEl.textContent = "Critical WASM Initialization Error: " + (err.message || err);
+            });
+            renderRecipe(); // Initial render of empty recipe
+        });
+
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>Go-CyberChef <span style="font-size: 0.7em; color: #0098ff;">(WASM Edition)</span></h1>
+    </div>
+    <div class="status-bar">
+        <span id="wasmStatus">Initializing...</span>
+        <span id="errorDisplay"></span>
+    </div>
+    <div class="main-container">
+        <div class="column operations-list">
+            <h3>Operations</h3>
+            <button onclick="addOperationToRecipe('To Base64', 'goEncodeBase64')">To Base64</button>
+            <button onclick="addOperationToRecipe('From Base64', 'goDecodeBase64')">From Base64</button>
+            <!-- Future operations will be added here -->
+        </div>
+        
+        <div class="column recipe-column">
+            <h3>Recipe</h3>
+            <div id="recipeContainer">
+                <!-- Recipe items will be dynamically added here by JavaScript -->
+            </div>
+            <button id="bakeButton" onclick="bake()">Bake!</button>
+            <div id="processingTime"></div>
+        </div>
+        
+        <div class="column io-column" style="flex: 2;">
+            <h3>Input</h3>
+            <textarea id="inputTextArea" placeholder="Enter your data here..."></textarea>
+        </div>
+        
+        <div class="column io-column" style="flex: 2;">
+            <h3>Output</h3>
+            <textarea id="outputTextArea" readonly placeholder="Output will appear here after baking..."></textarea>
+        </div>
+    </div>
+</body>
+</html>
