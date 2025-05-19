@@ -5,47 +5,60 @@ import (
 	"encoding/base64"
 	"fmt"
 	"syscall/js"
+	// "time" // For potential delays if needed for debugging, but not primary
 )
 
-func main() {
-	fmt.Println("Go WebAssembly Initialized!")
-
-	// Expose a function to JavaScript
-	js.Global().Set("goEncodeBase64", js.FuncOf(encodeBase64WASM))
-	js.Global().Set("goDecodeBase64", js.FuncOf(decodeBase64WASM))
-
-	// Keep the Go program running (otherwise it will exit immediately)
-	// For more complex applications, you might manage this differently.
-	select {}
+func encodeBase64(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		// Return a map or object for structured error, parsable by JS
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(base64.StdEncoding.EncodeToString([]byte(input)))
 }
 
-// encodeBase64WASM is a wrapper for Base64 encoding to be called from JavaScript.
-// It takes a single string argument and returns the Base64 encoded string.
-// If the input is not a string or not provided, it returns an error string.
-func encodeBase64WASM(this js.Value, args []js.Value) interface{} {
-	if len(args) != 1 || args[0].Type() != js.TypeString {
-		return "Error: Expected 1 string argument for ToBase64"
+func decodeBase64(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
 	}
-	inputString := args[0].String()
-	encoded := base64.StdEncoding.EncodeToString([]byte(inputString))
-	// fmt.Printf("Go WASM: Encoding '%s' to '%s'\n", inputString, encoded) // Optional: for server-side Go debugging
-	return encoded
-}
-
-// decodeBase64WASM is a wrapper for Base64 decoding to be called from JavaScript.
-// It takes a single Base64 encoded string argument and returns the decoded string.
-// If the input is not a string, not provided, or is invalid Base64, it returns an error string.
-func decodeBase64WASM(this js.Value, args []js.Value) interface{} {
-	if len(args) != 1 || args[0].Type() != js.TypeString {
-		return "Error: Expected 1 string argument for FromBase64"
-	}
-	encodedString := args[0].String()
-	decodedBytes, err := base64.StdEncoding.DecodeString(encodedString)
+	input := args[0].String()
+	decoded, err := base64.StdEncoding.DecodeString(input)
 	if err != nil {
-		// fmt.Printf("Go WASM: Error decoding Base64 string '%s': %s\n", encodedString, err.Error()) // Optional
-		return "Error: Invalid Base64 input - " + err.Error()
+		return js.ValueOf(map[string]interface{}{"error": "Error decoding Base64: " + err.Error()})
 	}
-	decoded := string(decodedBytes)
-	// fmt.Printf("Go WASM: Decoding '%s' to '%s'\n", encodedString, decoded) // Optional
-	return decoded
+	return js.ValueOf(string(decoded))
+}
+
+// Add other Go functions that need to be exposed here...
+
+func main() {
+	c := make(chan struct{}, 0) // Prevents main from exiting
+
+	fmt.Println("Go (WASM): main() started.")
+
+	js.Global().Set("goEncodeBase64", js.FuncOf(encodeBase64))
+	fmt.Println("Go (WASM): Exposed goEncodeBase64.")
+
+	js.Global().Set("goDecodeBase64", js.FuncOf(decodeBase64))
+	fmt.Println("Go (WASM): Exposed goDecodeBase64.")
+
+	// Add other js.Global().Set calls here for other functions
+
+	fmt.Println("Go (WASM): All functions exposed.")
+
+	// Signal to JavaScript that Go WASM is ready
+	goWasmReadyCb := js.Global().Get("goWasmReady")
+
+	if !goWasmReadyCb.IsUndefined() && !goWasmReadyCb.IsNull() {
+		fmt.Println("Go (WASM): Found goWasmReady() in JavaScript global scope. Attempting to call it.")
+		// time.Sleep(1 * time.Second) // Optional: add a small delay if suspecting a race condition with JS setup, though unlikely here.
+		goWasmReadyCb.Invoke()
+		fmt.Println("Go (WASM): Successfully invoked goWasmReady() from Go.")
+	} else {
+		fmt.Println("Go (WASM): CRITICAL ERROR - goWasmReady JavaScript function NOT FOUND on js.Global().")
+		fmt.Println("Go (WASM): Ensure 'self.goWasmReady = () => { ... };' is defined in the worker's global scope BEFORE wasm_exec.js and main.wasm are loaded/run.")
+	}
+
+	fmt.Println("Go (WASM): main() function has completed its setup and is now blocking to keep runtime alive.")
+	<-c // Keep alive
 }
