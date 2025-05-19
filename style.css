@@ -1,0 +1,277 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  color: #333;
+}
+.header {
+  background-color: #252526;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header h1 {
+  margin: 0;
+  font-size: 1.6em;
+  font-weight: normal;
+  flex-grow: 1;
+  text-align: center; /* Ensure h1 takes space and centers text */
+}
+.header .title-container {
+  flex-grow: 1;
+  text-align: center;
+  /* Iniline */
+  flex: 1; /* Allow the title container to grow and take available space */
+  display: flex; /* Use flexbox for centering */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  margin: 0; /* Remove default margin */
+  /* New container for title centering */
+}
+.header #installAppButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+.header #installAppButton:hover {
+  color: #0098ff;
+}
+.header #downloadAppButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+.header #downloadAppButton:hover {
+  color: #0098ff;
+}
+.status-bar {
+  padding: 8px 20px;
+  background-color: #007acc;
+  color: white;
+  font-size: 0.9em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.status-bar #wasmStatus {
+  margin-right: 20px;
+}
+.status-bar #errorDisplay {
+  color: #ffdddd;
+  font-weight: bold;
+  text-align: right;
+  flex-grow: 1;
+  margin-left: 20px;
+}
+.status-bar #loopStatusContainer {
+  width: 100%;
+  display: none;
+  margin-top: 5px;
+  text-align: center;
+}
+.status-bar #loopStatusMessage {
+  font-size: 0.95em;
+  margin-bottom: 3px;
+}
+.status-bar #loopProgressBarOuter {
+  background-color: #005c99;
+  border-radius: 3px;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+}
+.status-bar #loopProgressBarInner {
+  background-color: #4caf50;
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  transition: width 0.2s ease-in-out;
+}
+.main-container {
+  display: flex;
+  flex-grow: 1;
+  padding: 15px;
+  gap: 15px;
+  overflow: hidden;
+  background-color: #1e1e1e;
+}
+.column {
+  display: flex;
+  flex-direction: column;
+  background-color: #2d2d2d;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  color: #ccc;
+}
+
+.operations-list {
+  width: 220px;
+  padding: 15px;
+}
+.operations-list h3 {
+  margin-top: 0;
+  font-size: 1.2em;
+  color: #0098ff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.operations-list button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #3c3c3c;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.95em;
+}
+.operations-list button:hover {
+  background-color: #007acc;
+  color: white;
+  border-color: #007acc;
+}
+
+.recipe-column {
+  flex: 1.2;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+.recipe-column h3 {
+  margin-top: 0;
+  font-size: 1.2em;
+  color: #0098ff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+#recipeContainer {
+  border: 1px solid #444;
+  min-height: 150px;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #252526;
+  flex-grow: 1;
+  margin-bottom: 15px;
+  overflow-y: auto;
+}
+.recipe-item {
+  background-color: #37373d;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #555;
+}
+.recipe-item span {
+  flex-grow: 1;
+}
+.recipe-item input[type="number"] {
+  width: 50px;
+  margin-left: 10px;
+  background-color: #252526;
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 4px;
+}
+.recipe-item button.remove-op-btn {
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.8em;
+  margin-left: 10px;
+}
+.recipe-item button.remove-op-btn:hover {
+  background-color: #e74c3c;
+}
+#bakeButton {
+  padding: 12px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1em;
+  width: 100%;
+}
+#bakeButton:hover {
+  background-color: #218838;
+}
+#bakeButton:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.recipe-item.loop-start {
+  background-color: #2a4b2a;
+  border-left: 3px solid #38761d;
+}
+.recipe-item.loop-end {
+  background-color: #4b2a2a;
+  border-left: 3px solid #990000;
+}
+
+.io-column {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+}
+.io-column h3 {
+  margin-top: 0;
+  padding: 15px;
+  padding-bottom: 5px;
+  font-size: 1.2em;
+  color: #0098ff;
+  border-bottom: 1px solid #444;
+  margin-left: 15px;
+  margin-right: 15px;
+  margin-bottom: 0px;
+}
+textarea {
+  width: calc(100% - 30px);
+  flex-grow: 1;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 1em;
+  resize: none;
+  margin: 15px;
+  margin-top: 10px;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+}
+#processingTime {
+  font-size: 0.9em;
+  margin-top: 10px;
+  text-align: right;
+  padding-right: 0px;
+  color: #888;
+}
