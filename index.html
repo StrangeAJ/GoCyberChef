@@ -37,11 +37,11 @@
     <div class="main-container">
         <div class="column operations-list">
             <h3>Operations</h3>
-            <button onclick="addProcessingOperation('To Base64', 'goEncodeBase64')">To Base64</button>
-            <button onclick="addProcessingOperation('From Base64', 'goDecodeBase64')">From Base64</button>
+            <button data-op-name="To Base64" data-op-func-key="goEncodeBase64" onclick="addProcessingOperation('To Base64', 'goEncodeBase64')">To Base64</button>
+            <button data-op-name="From Base64" data-op-func-key="goDecodeBase64" onclick="addProcessingOperation('From Base64', 'goDecodeBase64')">From Base64</button>
             <hr style="border-color: #444; margin: 15px 0;">
-            <button onclick="promptAddLoopStart()">Add Loop Start</button>
-            <button onclick="promptAddLoopEnd()">Add Loop End</button>
+            <button data-op-name="Loop Start" data-op-type="loopStart" onclick="promptAddLoopStart()">Add Loop Start</button>
+            <button data-op-name="Loop End" data-op-type="loopEnd" onclick="promptAddLoopEnd()">Add Loop End</button>
             <!-- Future operations will be added here -->
         </div>
         

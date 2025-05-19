@@ -185,11 +185,50 @@ body {
   justify-content: space-between;
   align-items: center;
   border: 1px solid #555;
+  cursor: grab; /* Add grab cursor for draggable items */
 }
+
+.recipe-item.dragging {
+  opacity: 0.5;
+  background: #555;
+}
+
+.operations-list button.dragging {
+    opacity: 0.5;
+    background: #007acc;
+}
+
+#recipeContainer.drag-over {
+  border: 2px dashed #0098ff;
+  background-color: #2a2a2a;
+}
+
+.recipe-item.drag-over-item {
+    border-top: 2px solid #0098ff; /* Highlight when dragging over an item */
+}
+
 .recipe-item span {
   flex-grow: 1;
 }
-.recipe-item input[type="number"] {
+
+.recipe-item-name {
+    display: flex; /* Use flex to align text and inputs */
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping if space is tight */
+}
+
+.recipe-loop-input {
+    width: 60px; /* Adjust width as needed */
+    margin: 0 5px; /* Add some spacing */
+    background-color: #252526;
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 4px;
+    font-size: 0.9em;
+}
+
+.recipe-process-iter-input {
   width: 50px;
   margin-left: 10px;
   background-color: #252526;

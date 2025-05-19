@@ -210,17 +210,81 @@ function renderRecipe() {
         div.addEventListener('drop', handleDropOnRecipeItem);
         div.addEventListener('dragleave', handleDragLeave);
 
+        const opNameSpan = document.createElement('span');
+        opNameSpan.classList.add('recipe-item-name'); // Added class for styling
 
         if (item.type === 'loopStart') {
             div.classList.add('loop-start');
+            opNameSpan.textContent = `${index + 1}. Loop Start: `;
+
+            const idInput = document.createElement('input');
+            idInput.type = 'text';
+            idInput.value = item.identifier;
+            idInput.title = "Loop Identifier";
+            idInput.classList.add('recipe-loop-input');
+            idInput.onchange = (event) => {
+                const newId = event.target.value.trim();
+                if (newId) {
+                    recipe[index].identifier = newId;
+                    recipe[index].name = `Loop Start: ${newId} (${recipe[index].loopIterations}x)`;
+                    renderRecipe(); // Re-render to update names and potentially other dependent items
+                } else {
+                    event.target.value = recipe[index].identifier; // revert if empty
+                    alert("Loop identifier cannot be empty.");
+                }
+            };
+
+            const iterInput = document.createElement('input');
+            iterInput.type = 'number';
+            iterInput.value = item.loopIterations;
+            iterInput.min = 1;
+            iterInput.title = "Number of loop iterations";
+            iterInput.classList.add('recipe-loop-input');
+            iterInput.onchange = (event) => {
+                const newIterations = parseInt(event.target.value, 10);
+                if (newIterations && newIterations > 0) {
+                    recipe[index].loopIterations = newIterations;
+                    recipe[index].name = `Loop Start: ${recipe[index].identifier} (${newIterations}x)`;
+                    renderRecipe();
+                } else {
+                    event.target.value = recipe[index].loopIterations; // revert if invalid
+                    alert("Invalid number of iterations. Must be 1 or greater.");
+                }
+            };
+            opNameSpan.appendChild(document.createTextNode('(ID: '));
+            opNameSpan.appendChild(idInput);
+            opNameSpan.appendChild(document.createTextNode(', Iterations: '));
+            opNameSpan.appendChild(iterInput);
+            opNameSpan.appendChild(document.createTextNode(')'));
+
         } else if (item.type === 'loopEnd') {
             div.classList.add('loop-end');
+            opNameSpan.textContent = `${index + 1}. Loop End: `;
+
+            const idInput = document.createElement('input');
+            idInput.type = 'text';
+            idInput.value = item.identifier;
+            idInput.title = "Loop Identifier";
+            idInput.classList.add('recipe-loop-input');
+            idInput.onchange = (event) => {
+                const newId = event.target.value.trim();
+                if (newId) {
+                    recipe[index].identifier = newId;
+                    recipe[index].name = `Loop End: ${newId}`;
+                    renderRecipe();
+                } else {
+                    event.target.value = recipe[index].identifier; // revert if empty
+                    alert("Loop identifier cannot be empty.");
+                }
+            };
+            opNameSpan.appendChild(document.createTextNode('(ID: '));
+            opNameSpan.appendChild(idInput);
+            opNameSpan.appendChild(document.createTextNode(')'));
+
+        } else { // Process item
+            opNameSpan.textContent = `${index + 1}. ${item.name}`;
         }
         
-        const opNameSpan = document.createElement('span');
-        opNameSpan.textContent = `${index + 1}. ${item.name}`;
-        // For loop items, item.name is already descriptive.
-        // For process items, item.name is like 'To Base64'.
         div.appendChild(opNameSpan);
         
         if (item.type === 'process') {
@@ -229,6 +293,7 @@ function renderRecipe() {
             iterInput.value = item.opIterations || 1;
             iterInput.min = 1;
             iterInput.title = "Number of times to run this operation";
+            iterInput.classList.add('recipe-process-iter-input'); // Added class for styling
             iterInput.onchange = (event) => {
                 const newIterations = parseInt(event.target.value, 10);
                 if (newIterations && newIterations > 0) {
@@ -257,7 +322,8 @@ function handleDragStartOperation(e) {
     draggedItem = {
         type: 'new-operation',
         name: e.target.dataset.opName,
-        funcKey: e.target.dataset.opFuncKey
+        funcKey: e.target.dataset.opFuncKey, // Will be undefined for loops, which is fine
+        opType: e.target.dataset.opType // Added to distinguish loop operations
     };
     e.dataTransfer.effectAllowed = 'copy';
     e.target.classList.add('dragging');
@@ -311,8 +377,33 @@ function handleDropOnRecipeContainer(e) {
     e.target.classList.remove('drag-over');
     if (!draggedItem) return;
 
+    const errorEl = document.getElementById('errorDisplay');
+    if (errorEl) errorEl.textContent = ''; // Clear previous errors
+
     if (draggedItem.type === 'new-operation') {
-        recipe.push({ type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 });
+        if (draggedItem.opType === 'loopStart') {
+            const identifier = prompt("Enter Loop Identifier (e.g., A, Loop1):");
+            if (!identifier || identifier.trim() === "") {
+                if (errorEl) errorEl.textContent = "Loop identifier cannot be empty.";
+            } else {
+                const iterationsStr = prompt("Enter number of loop iterations:", "2");
+                const loopIterations = parseInt(iterationsStr, 10);
+                if (isNaN(loopIterations) || loopIterations < 1) {
+                    if (errorEl) errorEl.textContent = "Invalid number of iterations. Must be 1 or greater.";
+                } else {
+                    recipe.push({ type: 'loopStart', identifier: identifier.trim(), loopIterations: loopIterations, name: `Loop Start: ${identifier.trim()} (${loopIterations}x)` });
+                }
+            }
+        } else if (draggedItem.opType === 'loopEnd') {
+            const identifier = prompt("Enter Loop Identifier to End (e.g., A, Loop1):");
+            if (!identifier || identifier.trim() === "") {
+                if (errorEl) errorEl.textContent = "Loop identifier cannot be empty.";
+            } else {
+                recipe.push({ type: 'loopEnd', identifier: identifier.trim(), name: `Loop End: ${identifier.trim()}` });
+            }
+        } else { // Process operation
+            recipe.push({ type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 });
+        }
     } else if (draggedItem.type === 'recipe-item') {
         // This case handles dropping a recipe item onto the container (e.g., to the end)
         // If the drop is not on another item, move to the end.
@@ -331,9 +422,38 @@ function handleDropOnRecipeItem(e) {
     if (!draggedItem || !targetItem) return;
 
     const targetIndex = parseInt(targetItem.dataset.index, 10);
+    const errorEl = document.getElementById('errorDisplay');
+    if (errorEl) errorEl.textContent = ''; // Clear previous errors
 
     if (draggedItem.type === 'new-operation') {
-        recipe.splice(targetIndex, 0, { type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 });
+        let newItem = null;
+        if (draggedItem.opType === 'loopStart') {
+            const identifier = prompt("Enter Loop Identifier (e.g., A, Loop1):");
+            if (!identifier || identifier.trim() === "") {
+                if (errorEl) errorEl.textContent = "Loop identifier cannot be empty.";
+            } else {
+                const iterationsStr = prompt("Enter number of loop iterations:", "2");
+                const loopIterations = parseInt(iterationsStr, 10);
+                if (isNaN(loopIterations) || loopIterations < 1) {
+                    if (errorEl) errorEl.textContent = "Invalid number of iterations. Must be 1 or greater.";
+                } else {
+                    newItem = { type: 'loopStart', identifier: identifier.trim(), loopIterations: loopIterations, name: `Loop Start: ${identifier.trim()} (${loopIterations}x)` };
+                }
+            }
+        } else if (draggedItem.opType === 'loopEnd') {
+            const identifier = prompt("Enter Loop Identifier to End (e.g., A, Loop1):");
+            if (!identifier || identifier.trim() === "") {
+                if (errorEl) errorEl.textContent = "Loop identifier cannot be empty.";
+            } else {
+                newItem = { type: 'loopEnd', identifier: identifier.trim(), name: `Loop End: ${identifier.trim()}` };
+            }
+        } else { // Process operation
+            newItem = { type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 };
+        }
+        
+        if (newItem) { // Only add if newItem was successfully created
+            recipe.splice(targetIndex, 0, newItem);
+        }
     } else if (draggedItem.type === 'recipe-item') {
         if (draggedItem.index === targetIndex) return; // Dropped on itself
 
