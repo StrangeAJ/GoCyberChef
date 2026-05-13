@@ -20,7 +20,7 @@ let goInstance;
 self.goWasmReady = () => {
     console.log("Worker: goWasmReady() CALLED by Go.");
         // ONLY expect functions currently implemented and exposed in main.go
-    const expectedFunctions = ['goEncodeBase64', 'goDecodeBase64'];
+    const expectedFunctions = ['goEncodeBase64', 'goDecodeBase64', 'goAESEncrypt', 'goAESDecrypt'];
     let allFound = true;
     let foundFunctions = {};
 
@@ -168,7 +168,22 @@ async function bakeInWorker(recipe, initialData) {
                 console.log(`Worker: Op ${op.name}, Iteration ${i + 1}/${opIterations}. Input data length: ${currentVal?.length}`);
                 postMessage({ type: 'log', message: `Worker: Op ${op.name}, Iteration ${i + 1}/${opIterations}.` });
                 
-                const result = wasmFunc(currentVal); 
+
+                let result;
+                if (op.funcKey === 'goAESEncrypt' || op.funcKey === 'goAESDecrypt') {
+                    const opts = {
+                        key: op.key || "",
+                        keyFormat: op.keyFormat || "Raw",
+                        iv: op.iv || "",
+                        ivFormat: op.ivFormat || "Raw",
+                        mode: op.mode || "GCM",
+                        inputFormat: op.inputFormat || "Base64",
+                        outputFormat: op.outputFormat || "Base64"
+                    };
+                    result = wasmFunc(currentVal, opts);
+                } else {
+                    result = wasmFunc(currentVal);
+                }
                 
                 console.log(`Worker: Op ${op.name}, Iteration ${i + 1} completed. Result type: ${typeof result}, Result length: ${result?.length}`);
                 postMessage({ type: 'log', message: `Worker: Op ${op.name}, Iteration ${i + 1} completed.` });
