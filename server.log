@@ -1,3 +1,12 @@
-127.0.0.1 - - [13/May/2026 18:01:34] "GET /validator.html HTTP/1.1" 200 -
-127.0.0.1 - - [13/May/2026 18:01:34] "GET /validator.css HTTP/1.1" 200 -
-127.0.0.1 - - [13/May/2026 18:01:34] "GET /validator.js HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET /logo.svg HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET /wasm_exec.js HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET /js_worker.js HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:55] "GET /service-worker.js HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:56] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:56] "GET /main.wasm HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:56] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [13/May/2026 20:29:56] code 404, message File not found
+127.0.0.1 - - [13/May/2026 20:29:56] "GET /icon-192x192.png HTTP/1.1" 404 -

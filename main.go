@@ -3,10 +3,16 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"syscall/js"
 )
 
@@ -28,6 +34,98 @@ func decodeBase64(this js.Value, args []js.Value) interface{} {
 		return js.ValueOf(map[string]interface{}{"error": "Error decoding Base64: " + err.Error()})
 	}
 	return js.ValueOf(string(decoded))
+}
+
+func encodeHex(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(hex.EncodeToString([]byte(input)))
+}
+
+func decodeHex(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	decoded, err := hex.DecodeString(input)
+	if err != nil {
+		return js.ValueOf(map[string]interface{}{"error": "Error decoding Hex: " + err.Error()})
+	}
+	return js.ValueOf(string(decoded))
+}
+
+func goMD5(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	hash := md5.Sum([]byte(input))
+	return js.ValueOf(hex.EncodeToString(hash[:]))
+}
+
+func goSHA1(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	hash := sha1.Sum([]byte(input))
+	return js.ValueOf(hex.EncodeToString(hash[:]))
+}
+
+func goSHA256(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	hash := sha256.Sum256([]byte(input))
+	return js.ValueOf(hex.EncodeToString(hash[:]))
+}
+
+func goSHA512(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	hash := sha512.Sum512([]byte(input))
+	return js.ValueOf(hex.EncodeToString(hash[:]))
+}
+
+func goURLEncode(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(url.QueryEscape(input))
+}
+
+func goURLDecode(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	decoded, err := url.QueryUnescape(input)
+	if err != nil {
+		return js.ValueOf(map[string]interface{}{"error": "Error decoding URL: " + err.Error()})
+	}
+	return js.ValueOf(decoded)
+}
+
+func goToUpperCase(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(strings.ToUpper(input))
+}
+
+func goToLowerCase(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(strings.ToLower(input))
 }
 
 func decodeData(data, format string) ([]byte, error) {
@@ -316,16 +414,19 @@ func main() {
 	fmt.Println("Go (WASM): main() started.")
 
 	js.Global().Set("goEncodeBase64", js.FuncOf(encodeBase64))
-	fmt.Println("Go (WASM): Exposed goEncodeBase64.")
-
 	js.Global().Set("goDecodeBase64", js.FuncOf(decodeBase64))
-	fmt.Println("Go (WASM): Exposed goDecodeBase64.")
-
+	js.Global().Set("goEncodeHex", js.FuncOf(encodeHex))
+	js.Global().Set("goDecodeHex", js.FuncOf(decodeHex))
+	js.Global().Set("goMD5", js.FuncOf(goMD5))
+	js.Global().Set("goSHA1", js.FuncOf(goSHA1))
+	js.Global().Set("goSHA256", js.FuncOf(goSHA256))
+	js.Global().Set("goSHA512", js.FuncOf(goSHA512))
+	js.Global().Set("goURLEncode", js.FuncOf(goURLEncode))
+	js.Global().Set("goURLDecode", js.FuncOf(goURLDecode))
+	js.Global().Set("goToUpperCase", js.FuncOf(goToUpperCase))
+	js.Global().Set("goToLowerCase", js.FuncOf(goToLowerCase))
 	js.Global().Set("goAESEncrypt", js.FuncOf(aesEncrypt))
-	fmt.Println("Go (WASM): Exposed goAESEncrypt.")
-
 	js.Global().Set("goAESDecrypt", js.FuncOf(aesDecrypt))
-	fmt.Println("Go (WASM): Exposed goAESDecrypt.")
 
 	fmt.Println("Go (WASM): All functions exposed.")
 
