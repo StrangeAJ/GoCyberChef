@@ -1,0 +1,186 @@
+:root {
+    /* Developer Utility System Tokens */
+    --primary: #0050cb;
+    --primary-container: #0066ff;
+    --background: #faf8ff;
+    --surface: #ffffff;
+    --surface-container: #ecedfa;
+    --surface-variant: #e1e2ee;
+    --on-surface: #191b24;
+    --on-surface-variant: #424656;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+    --on-error-container: #93000a;
+    --success: #388e3c;
+    --success-container: #e8f5e9;
+    --on-success-container: #1b5e20;
+    --outline: #727687;
+    --outline-variant: #c2c6d8;
+
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+
+    --radius-md: 8px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--background);
+    color: var(--on-surface);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: var(--spacing-md);
+}
+
+.app-container {
+    width: 100%;
+    max-width: 800px;
+    padding: var(--spacing-xl, 32px);
+    background-color: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--outline-variant);
+}
+
+.app-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.app-header h1 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--primary);
+}
+
+.app-header p {
+    margin: 0;
+    color: var(--on-surface-variant);
+    font-size: 16px;
+}
+
+.validator-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.field-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.field-header label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--on-surface-variant);
+}
+
+.helper-text {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+}
+
+.input-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline-variant);
+    background-color: #F5F7FA; /* Surface container as per design doc */
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--on-surface);
+    resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 80, 203, 0.1);
+}
+
+.input-container.error textarea {
+    border-color: var(--error);
+}
+
+.input-container.error textarea:focus {
+    box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.1);
+}
+
+.input-container.success textarea {
+    border-color: var(--success);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.input-container.error .status-indicator {
+    visibility: visible;
+    opacity: 1;
+    background-color: var(--error-container);
+    color: var(--on-error-container);
+}
+
+.input-container.success .status-indicator {
+    visibility: visible;
+    opacity: 1;
+    background-color: var(--success-container);
+    color: var(--on-success-container);
+}
+
+.status-icon {
+    font-size: 16px;
+}
+
+.app-footer {
+    margin-top: var(--spacing-lg);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline-variant);
+    background-color: transparent;
+    color: var(--on-surface);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: var(--surface-container);
+}
