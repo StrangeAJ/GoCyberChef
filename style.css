@@ -314,3 +314,47 @@ textarea {
   padding-right: 0px;
   color: #888;
 }
+
+
+
+
+
+
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 120px;
+}
+.recipe-aes-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 0.85em;
+    background: #333;
+    padding: 8px;
+    border-radius: 4px;
+}
+.recipe-aes-options label {
+    grid-column: 1;
+    text-align: right;
+    color: #ccc;
+    white-space: nowrap;
+}
+.recipe-aes-options input[type="text"] {
+    grid-column: 2;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 120px;
+}
+.recipe-aes-options select {
+    grid-column: 3;
+}
+.recipe-aes-options input[type="text"], .recipe-aes-options select {
+    background-color: #444;
+    color: #f0f0f0;
+    border: 1px solid #555;
+    padding: 2px 4px;
+    border-radius: 3px;
+    outline: none;
+}

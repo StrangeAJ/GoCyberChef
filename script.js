@@ -154,7 +154,19 @@ function addProcessingOperation(opName, opFuncKey) {
         return;
     }
 
-    recipe.push({ type: 'process', name: opName, funcKey: opFuncKey, opIterations: 1 });
+    let opDetails = { type: 'process', name: opName, funcKey: opFuncKey, opIterations: 1 };
+
+    if (opFuncKey === 'goAESEncrypt' || opFuncKey === 'goAESDecrypt') {
+        opDetails.key = '';
+        opDetails.keyFormat = 'Raw';
+        opDetails.iv = '';
+        opDetails.ivFormat = 'Raw';
+        opDetails.mode = 'GCM';
+        opDetails.inputFormat = 'Base64';
+        opDetails.outputFormat = 'Base64';
+    }
+
+    recipe.push(opDetails);
     renderRecipe();
 }
 
@@ -303,6 +315,101 @@ function renderRecipe() {
                 }
             };
             div.appendChild(iterInput);
+
+            if (item.funcKey === 'goAESEncrypt' || item.funcKey === 'goAESDecrypt') {
+                const optionsDiv = document.createElement('div');
+                optionsDiv.classList.add('recipe-aes-options');
+
+                // Mode
+                const modeLabel = document.createElement('label');
+                modeLabel.textContent = ' Mode: ';
+                const modeSelect = document.createElement('select');
+                ['GCM', 'CBC', 'CFB', 'CTR'].forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    if (item.mode === m) opt.selected = true;
+                    modeSelect.appendChild(opt);
+                });
+                modeSelect.onchange = (e) => recipe[index].mode = e.target.value;
+                optionsDiv.appendChild(modeLabel);
+                optionsDiv.appendChild(modeSelect);
+
+                // Key
+                const keyLabel = document.createElement('label');
+                keyLabel.textContent = ' Key: ';
+                const keyInput = document.createElement('input');
+                keyInput.type = 'text';
+                keyInput.value = item.key || '';
+                keyInput.onchange = (e) => recipe[index].key = e.target.value;
+
+                const keyFormatSelect = document.createElement('select');
+                ['Raw', 'Hex', 'Base64'].forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f;
+                    opt.textContent = f;
+                    if (item.keyFormat === f) opt.selected = true;
+                    keyFormatSelect.appendChild(opt);
+                });
+                keyFormatSelect.onchange = (e) => recipe[index].keyFormat = e.target.value;
+                optionsDiv.appendChild(keyLabel);
+                optionsDiv.appendChild(keyInput);
+                optionsDiv.appendChild(keyFormatSelect);
+
+                // IV
+                const ivLabel = document.createElement('label');
+                ivLabel.textContent = ' IV: ';
+                const ivInput = document.createElement('input');
+                ivInput.type = 'text';
+                ivInput.value = item.iv || '';
+                ivInput.onchange = (e) => recipe[index].iv = e.target.value;
+
+                const ivFormatSelect = document.createElement('select');
+                ['Raw', 'Hex', 'Base64'].forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f;
+                    opt.textContent = f;
+                    if (item.ivFormat === f) opt.selected = true;
+                    ivFormatSelect.appendChild(opt);
+                });
+                ivFormatSelect.onchange = (e) => recipe[index].ivFormat = e.target.value;
+                optionsDiv.appendChild(ivLabel);
+                optionsDiv.appendChild(ivInput);
+                optionsDiv.appendChild(ivFormatSelect);
+
+                // IO Format
+                if (item.funcKey === 'goAESEncrypt') {
+                    const formatLabel = document.createElement('label');
+                    formatLabel.textContent = ' Output: ';
+                    const formatSelect = document.createElement('select');
+                    ['Base64', 'Hex'].forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f;
+                        opt.textContent = f;
+                        if (item.outputFormat === f) opt.selected = true;
+                        formatSelect.appendChild(opt);
+                    });
+                    formatSelect.onchange = (e) => recipe[index].outputFormat = e.target.value;
+                    optionsDiv.appendChild(formatLabel);
+                    optionsDiv.appendChild(formatSelect);
+                } else {
+                    const formatLabel = document.createElement('label');
+                    formatLabel.textContent = ' Input: ';
+                    const formatSelect = document.createElement('select');
+                    ['Base64', 'Hex'].forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f;
+                        opt.textContent = f;
+                        if (item.inputFormat === f) opt.selected = true;
+                        formatSelect.appendChild(opt);
+                    });
+                    formatSelect.onchange = (e) => recipe[index].inputFormat = e.target.value;
+                    optionsDiv.appendChild(formatLabel);
+                    optionsDiv.appendChild(formatSelect);
+                }
+
+                div.appendChild(optionsDiv);
+            }
         }
         
         const removeBtn = document.createElement('button');
@@ -402,7 +509,17 @@ function handleDropOnRecipeContainer(e) {
                 recipe.push({ type: 'loopEnd', identifier: identifier.trim(), name: `Loop End: ${identifier.trim()}` });
             }
         } else { // Process operation
-            recipe.push({ type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 });
+            let newItem = { type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 };
+            if (draggedItem.funcKey === 'goAESEncrypt' || draggedItem.funcKey === 'goAESDecrypt') {
+                newItem.key = '';
+                newItem.keyFormat = 'Raw';
+                newItem.iv = '';
+                newItem.ivFormat = 'Raw';
+                newItem.mode = 'GCM';
+                newItem.inputFormat = 'Base64';
+                newItem.outputFormat = 'Base64';
+            }
+            recipe.push(newItem);
         }
     } else if (draggedItem.type === 'recipe-item') {
         // This case handles dropping a recipe item onto the container (e.g., to the end)
@@ -449,6 +566,15 @@ function handleDropOnRecipeItem(e) {
             }
         } else { // Process operation
             newItem = { type: 'process', name: draggedItem.name, funcKey: draggedItem.funcKey, opIterations: 1 };
+            if (draggedItem.funcKey === 'goAESEncrypt' || draggedItem.funcKey === 'goAESDecrypt') {
+                newItem.key = '';
+                newItem.keyFormat = 'Raw';
+                newItem.iv = '';
+                newItem.ivFormat = 'Raw';
+                newItem.mode = 'GCM';
+                newItem.inputFormat = 'Base64';
+                newItem.outputFormat = 'Base64';
+            }
         }
         
         if (newItem) { // Only add if newItem was successfully created
