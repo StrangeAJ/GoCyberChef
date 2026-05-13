@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEX & Base64 Validator</title>
+    <link rel="stylesheet" href="validator.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Data Validator</h1>
+            <p>Enter HEX or Base64 data for live validation.</p>
+        </header>
+
+        <main class="main-content">
+            <section class="validator-section">
+                <div class="field-header">
+                    <label for="hexInput">HEX Input</label>
+                    <span class="helper-text">Enter a valid hexadecimal string (0-9, A-F).</span>
+                </div>
+                <div class="input-container" id="hexContainer">
+                    <textarea id="hexInput" placeholder="e.g. 48656c6c6f"></textarea>
+                    <div class="status-indicator" id="hexStatus">
+                        <span class="status-icon"></span>
+                        <span class="status-message"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="validator-section">
+                <div class="field-header">
+                    <label for="base64Input">Base64 Input</label>
+                    <span class="helper-text">Enter a valid Base64 encoded string.</span>
+                </div>
+                <div class="input-container" id="base64Container">
+                    <textarea id="base64Input" placeholder="e.g. SGVsbG8="></textarea>
+                    <div class="status-indicator" id="base64Status">
+                        <span class="status-icon"></span>
+                        <span class="status-message"></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <button id="clearAll" class="btn-secondary">Clear All</button>
+        </footer>
+    </div>
+    <script src="validator.js"></script>
+</body>
+</html>
