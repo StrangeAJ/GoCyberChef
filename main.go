@@ -7,11 +7,13 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"syscall/js"
 )
@@ -126,6 +128,124 @@ func goToLowerCase(this js.Value, args []js.Value) interface{} {
 	}
 	input := args[0].String()
 	return js.ValueOf(strings.ToLower(input))
+}
+
+
+func goEncodeBase32(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(base32.StdEncoding.EncodeToString([]byte(input)))
+}
+
+func goDecodeBase32(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	decoded, err := base32.StdEncoding.DecodeString(input)
+	if err != nil {
+		return js.ValueOf(map[string]interface{}{"error": "Error decoding Base32: " + err.Error()})
+	}
+	return js.ValueOf(string(decoded))
+}
+
+func goROT13(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	var out strings.Builder
+	for i := 0; i < len(input); i++ {
+		b := input[i]
+		if b >= 'a' && b <= 'z' {
+			b = 'a' + (b-'a'+13)%26
+		} else if b >= 'A' && b <= 'Z' {
+			b = 'A' + (b-'A'+13)%26
+		}
+		out.WriteByte(b)
+	}
+	return js.ValueOf(out.String())
+}
+
+func goReverse(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	runes := []rune(input)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return js.ValueOf(string(runes))
+}
+
+func goEncodeBinary(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	var out strings.Builder
+	for i := 0; i < len(input); i++ {
+		if i > 0 {
+			out.WriteByte(' ')
+		}
+		out.WriteString(fmt.Sprintf("%08b", input[i]))
+	}
+	return js.ValueOf(out.String())
+}
+
+func goDecodeBinary(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	input = strings.ReplaceAll(input, " ", "")
+	if len(input)%8 != 0 {
+		return js.ValueOf(map[string]interface{}{"error": "length must be a multiple of 8"})
+	}
+	var out strings.Builder
+	for i := 0; i < len(input); i += 8 {
+		val, err := strconv.ParseInt(input[i:i+8], 2, 64)
+		if err != nil {
+			return js.ValueOf(map[string]interface{}{"error": "Error decoding Binary: " + err.Error()})
+		}
+		out.WriteByte(byte(val))
+	}
+	return js.ValueOf(out.String())
+}
+
+func goEncodeOctal(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	var out strings.Builder
+	for i := 0; i < len(input); i++ {
+		if i > 0 {
+			out.WriteByte(' ')
+		}
+		out.WriteString(fmt.Sprintf("%03o", input[i]))
+	}
+	return js.ValueOf(out.String())
+}
+
+func goDecodeOctal(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	parts := strings.Fields(input)
+	var out strings.Builder
+	for _, p := range parts {
+		val, err := strconv.ParseInt(p, 8, 64)
+		if err != nil {
+			return js.ValueOf(map[string]interface{}{"error": "Error decoding Octal: " + err.Error()})
+		}
+		out.WriteByte(byte(val))
+	}
+	return js.ValueOf(out.String())
 }
 
 func decodeData(data, format string) ([]byte, error) {
@@ -413,6 +533,14 @@ func main() {
 
 	fmt.Println("Go (WASM): main() started.")
 
+	js.Global().Set("goEncodeBase32", js.FuncOf(goEncodeBase32))
+	js.Global().Set("goDecodeBase32", js.FuncOf(goDecodeBase32))
+	js.Global().Set("goROT13", js.FuncOf(goROT13))
+	js.Global().Set("goReverse", js.FuncOf(goReverse))
+	js.Global().Set("goEncodeBinary", js.FuncOf(goEncodeBinary))
+	js.Global().Set("goDecodeBinary", js.FuncOf(goDecodeBinary))
+	js.Global().Set("goEncodeOctal", js.FuncOf(goEncodeOctal))
+	js.Global().Set("goDecodeOctal", js.FuncOf(goDecodeOctal))
 	js.Global().Set("goEncodeBase64", js.FuncOf(encodeBase64))
 	js.Global().Set("goDecodeBase64", js.FuncOf(decodeBase64))
 	js.Global().Set("goEncodeHex", js.FuncOf(encodeHex))
