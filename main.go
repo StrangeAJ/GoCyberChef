@@ -12,7 +12,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"html"
 	"net/url"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall/js"
@@ -246,6 +249,98 @@ func goDecodeOctal(this js.Value, args []js.Value) interface{} {
 		out.WriteByte(byte(val))
 	}
 	return js.ValueOf(out.String())
+}
+
+
+func goHTMLEncode(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(html.EscapeString(input))
+}
+
+func goHTMLDecode(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	return js.ValueOf(html.UnescapeString(input))
+}
+
+func goStripHTML(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	stripHTML := regexp.MustCompile(`<[^>]*>`)
+	return js.ValueOf(stripHTML.ReplaceAllString(input, ""))
+}
+
+func goRemoveWhitespace(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	removeWhitespace := regexp.MustCompile(`\s+`)
+	return js.ValueOf(removeWhitespace.ReplaceAllString(input, ""))
+}
+
+func goDefangURL(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	defangURL := strings.ReplaceAll(strings.ReplaceAll(input, "http", "hxxp"), ".", "[.]")
+	return js.ValueOf(defangURL)
+}
+
+func goDefangIP(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	defangIP := strings.ReplaceAll(input, ".", "[.]")
+	return js.ValueOf(defangIP)
+}
+
+func goSortLines(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	lines := strings.Split(input, "\n")
+	sort.Strings(lines)
+	return js.ValueOf(strings.Join(lines, "\n"))
+}
+
+func goReverseLines(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	lines := strings.Split(input, "\n")
+	for i, j := 0, len(lines)-1; i < j; i, j = i+1, j-1 {
+		lines[i], lines[j] = lines[j], lines[i]
+	}
+	return js.ValueOf(strings.Join(lines, "\n"))
+}
+
+func goUniqueLines(this js.Value, args []js.Value) interface{} {
+	if len(args) == 0 || args[0].Type() != js.TypeString {
+		return js.ValueOf(map[string]interface{}{"error": "Input must be a string"})
+	}
+	input := args[0].String()
+	lines := strings.Split(input, "\n")
+	seen := make(map[string]bool)
+	var unique []string
+	for _, l := range lines {
+		if !seen[l] {
+			seen[l] = true
+			unique = append(unique, l)
+		}
+	}
+	return js.ValueOf(strings.Join(unique, "\n"))
 }
 
 func decodeData(data, format string) ([]byte, error) {
@@ -533,6 +628,15 @@ func main() {
 
 	fmt.Println("Go (WASM): main() started.")
 
+	js.Global().Set("goHTMLEncode", js.FuncOf(goHTMLEncode))
+	js.Global().Set("goHTMLDecode", js.FuncOf(goHTMLDecode))
+	js.Global().Set("goStripHTML", js.FuncOf(goStripHTML))
+	js.Global().Set("goRemoveWhitespace", js.FuncOf(goRemoveWhitespace))
+	js.Global().Set("goDefangURL", js.FuncOf(goDefangURL))
+	js.Global().Set("goDefangIP", js.FuncOf(goDefangIP))
+	js.Global().Set("goSortLines", js.FuncOf(goSortLines))
+	js.Global().Set("goReverseLines", js.FuncOf(goReverseLines))
+	js.Global().Set("goUniqueLines", js.FuncOf(goUniqueLines))
 	js.Global().Set("goEncodeBase32", js.FuncOf(goEncodeBase32))
 	js.Global().Set("goDecodeBase32", js.FuncOf(goDecodeBase32))
 	js.Global().Set("goROT13", js.FuncOf(goROT13))
